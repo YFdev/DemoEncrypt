@@ -37,8 +37,7 @@ public class AESUtil {
             SecureRandom localSecureRandom = SecureRandom.getInstance(SHA1PRNG);
             byte[] bytes_key = new byte[20];
             localSecureRandom.nextBytes(bytes_key);
-            String str_key = toHex(bytes_key);
-            return str_key;
+            return toHex(bytes_key);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -60,15 +59,11 @@ public class AESUtil {
         // 在4.2以上版本中，SecureRandom获取方式发生了改变
         int sdk_version = android.os.Build.VERSION.SDK_INT;
         // Android  6.0 以上
-        if (sdk_version > 23) {
+        if (sdk_version > 17) {
             sr = SecureRandom.getInstance(SHA1PRNG, new CryptoProvider());
-            //4.2及以上
-        } else if (android.os.Build.VERSION.SDK_INT >= 17) {
-//            sr = SecureRandom.getInstance(SHA1PRNG, "Crypto");
         } else {
             sr = SecureRandom.getInstance(SHA1PRNG);
         }
-
 
         // for Java
         // secureRandom = SecureRandom.getInstance(SHA1PRNG);
@@ -77,8 +72,7 @@ public class AESUtil {
         kgen.init(128, sr);
         //AES中128位密钥版本有10个加密循环，192比特密钥版本有12个加密循环，256比特密钥版本则有14个加密循环。
         SecretKey skey = kgen.generateKey();
-        byte[] raw = skey.getEncoded();
-        return raw;
+        return skey.getEncoded();
     }
 
     /**
@@ -106,8 +100,7 @@ public class AESUtil {
         SecretKeySpec skeySpec = new SecretKeySpec(raw, AES);
         Cipher cipher = Cipher.getInstance(CBC_PKCS5_PADDING);
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec, new IvParameterSpec(new byte[cipher.getBlockSize()]));
-        byte[] encrypted = cipher.doFinal(clear);
-        return encrypted;
+        return cipher.doFinal(clear);
     }
 
     /**
@@ -136,21 +129,17 @@ public class AESUtil {
         SecretKeySpec skeySpec = new SecretKeySpec(raw, AES);
         Cipher cipher = Cipher.getInstance(CBC_PKCS5_PADDING);
         cipher.init(Cipher.DECRYPT_MODE, skeySpec, new IvParameterSpec(new byte[cipher.getBlockSize()]));
-        byte[] decrypted = cipher.doFinal(encrypted);
-        return decrypted;
+        return cipher.doFinal(encrypted);
     }
 
-
     // ----------------------------------------------- 辅助方法 ------------------------------------
-
-
     //二进制转字符
-    public static String toHex(byte[] buf) {
+    private static String toHex(byte[] buf) {
         if (buf == null)
             return "";
         StringBuffer result = new StringBuffer(2 * buf.length);
-        for (int i = 0; i < buf.length; i++) {
-            appendHex(result, buf[i]);
+        for (byte b : buf) {
+            appendHex(result, b);
         }
         return result.toString();
     }
@@ -160,12 +149,11 @@ public class AESUtil {
     }
 
     // 增加  CryptoProvider  类
-
     public static class CryptoProvider extends Provider {
         /**
          * Creates a Provider and puts parameters
          */
-        public CryptoProvider() {
+        CryptoProvider() {
             super("Crypto", 1.0, "HARMONY (SHA1 digest; SecureRandom; SHA1withDSA signature)");
             put("SecureRandom.SHA1PRNG",
                     "org.apache.harmony.security.provider.crypto.SHA1PRNG_SecureRandomImpl");

@@ -21,13 +21,13 @@ import javax.crypto.Cipher;
 public class RSAUtil {
 
     // 非对称加密密钥算法
-    public static final String RSA = "RSA";
+    private static final String RSA = "RSA";
     // 加密填充方式，android 的
-    public static final String ECB_NO_PADDING = "RSA/None/NoPadding";
+    private static final String ECB_NO_PADDING = "RSA/None/NoPadding";
     // 加密填充方式，标准jdk 的
-    public static final String ECB_PKCS1_PADDING = "RSA/ECB/PKCS1Padding";
+    private static final String ECB_PKCS1_PADDING = "RSA/ECB/PKCS1Padding";
     //秘钥默认长度
-    public static final int DEFAULT_KEY_SIZE = 2048;
+    private static final int DEFAULT_KEY_SIZE = 2048;
     // 当要加密的内容超过bufferSize，则采用partSplit进行分块加密
     public static final byte[] DEFAULT_SPLIT = "#PART#".getBytes();
     // 当前秘钥支持加密的最大字节数
@@ -74,8 +74,6 @@ public class RSAUtil {
             cp.init(Cipher.ENCRYPT_MODE, keyPublic);
             return cp.doFinal(data);
         }
-
-
     }
 
     /**
@@ -101,7 +99,6 @@ public class RSAUtil {
             cipher.init(Cipher.DECRYPT_MODE, keyPublic);
             return cipher.doFinal(data);
         }
-
     }
 
     // ------------------------------------------------ 私钥 ---------------------------------------
@@ -141,19 +138,16 @@ public class RSAUtil {
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
         KeyFactory kf = KeyFactory.getInstance(RSA);
         PrivateKey keyPrivate = kf.generatePrivate(keySpec);
-
         // 解密数据
         if (type.equalsIgnoreCase("java")) {
             Cipher cp = Cipher.getInstance(ECB_PKCS1_PADDING);
             cp.init(Cipher.DECRYPT_MODE, keyPrivate);
             return cp.doFinal(encrypted);
         } else {
-
             Cipher cp = Cipher.getInstance(RSA);
             cp.init(Cipher.DECRYPT_MODE, keyPrivate);
             return cp.doFinal(encrypted);
         }
-
     }
 
 }

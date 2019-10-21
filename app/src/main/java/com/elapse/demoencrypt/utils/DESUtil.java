@@ -3,7 +3,9 @@ package com.elapse.demoencrypt.utils;
 import android.annotation.SuppressLint;
 import android.util.Base64;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.Provider;
 import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
@@ -45,10 +47,10 @@ public class DESUtil {
      */
     public static String desEncrypt(String message, String key) throws Exception {
         Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
-        DESKeySpec desKeySpec = new DESKeySpec(key.getBytes("UTF-8"));
+        DESKeySpec desKeySpec = new DESKeySpec(key.getBytes(StandardCharsets.UTF_8));
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
         SecretKey secretKey = keyFactory.generateSecret(desKeySpec);
-        IvParameterSpec iv = new IvParameterSpec(key.getBytes("UTF-8"));
+        IvParameterSpec iv = new IvParameterSpec(key.getBytes(StandardCharsets.UTF_8));
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
         byte[] encryptbyte = cipher.doFinal(message.getBytes());
         return new String(Base64.encode(encryptbyte, Base64.DEFAULT)).trim();
@@ -69,7 +71,7 @@ public class DESUtil {
         DESKeySpec desKeySpec = new DESKeySpec(key.getBytes("UTF-8"));
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
         SecretKey secretKey = keyFactory.generateSecret(desKeySpec);
-        IvParameterSpec iv = new IvParameterSpec(key.getBytes("UTF-8"));
+        IvParameterSpec iv = new IvParameterSpec(key.getBytes(StandardCharsets.UTF_8));
         cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
         byte[] retByte = cipher.doFinal(bytesrc);
         return new String(retByte);
@@ -77,8 +79,6 @@ public class DESUtil {
 
 
     // ------------------------------------- 动态 --------------------------------------------------
-
-
     /*
      * 生成随机数，可以当做动态的密钥 加密和解密的密钥必须一致，不然将不能解密
      */
@@ -87,8 +87,7 @@ public class DESUtil {
             SecureRandom localSecureRandom = SecureRandom.getInstance(SHA1PRNG);
             byte[] bytes_key = new byte[20];
             localSecureRandom.nextBytes(bytes_key);
-            String str_key = toHex(bytes_key);
-            return str_key;
+            return toHex(bytes_key);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -103,7 +102,7 @@ public class DESUtil {
         SecureRandom sr = null;
         // 在4.2以上版本中，SecureRandom获取方式发生了改变
         if (android.os.Build.VERSION.SDK_INT >= 17) {
-//            sr = SecureRandom.getInstance(SHA1PRNG, "Crypto");
+            sr = SecureRandom.getInstance(SHA1PRNG, new CryptoProvider());
         } else {
             sr = SecureRandom.getInstance(SHA1PRNG);
         }
@@ -124,12 +123,12 @@ public class DESUtil {
     }
 
     //二进制转字符
-    public static String toHex(byte[] buf) {
+    private static String toHex(byte[] buf) {
         if (buf == null)
             return "";
         StringBuffer result = new StringBuffer(2 * buf.length);
-        for (int i = 0; i < buf.length; i++) {
-            appendHex(result, buf[i]);
+        for (byte b : buf) {
+            appendHex(result, b);
         }
         return result.toString();
     }
@@ -157,7 +156,7 @@ public class DESUtil {
      * @param key  加密私钥，长度不能够小于8位
      * @return 加密后的字节数组，一般结合Base64编码使用
      */
-    public static String encode(String key, byte[] data) {
+    private static String encode(String key, byte[] data) {
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             IvParameterSpec iv = new IvParameterSpec(IVPARAMETERSPEC.getBytes());
@@ -187,17 +186,29 @@ public class DESUtil {
      * @param key  解密私钥，长度不能够小于8位
      * @return 解密后的字节数组
      */
-    public static String decode(String key, byte[] data) {
+    private static String decode(String key, byte[] data) {
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             IvParameterSpec iv = new IvParameterSpec(IVPARAMETERSPEC.getBytes());
             cipher.init(Cipher.DECRYPT_MODE, getRawKey(key), iv);
             byte[] original = cipher.doFinal(data);
-            String originalString = new String(original);
-            return originalString;
+            return new String(original);
         } catch (Exception e) {
             return null;
         }
     }
 
+
+    // 增加  CryptoProvider  类
+    public static class CryptoProvider extends Provider {
+        /**
+         * Creates a Provider and puts parameters
+         */
+        CryptoProvider() {
+            super("Crypto", 1.0, "HARMONY (SHA1 digest; SecureRandom; SHA1withDSA signature)");
+            put("SecureRandom.SHA1PRNG",
+                    "org.apache.harmony.security.provider.crypto.SHA1PRNG_SecureRandomImpl");
+            put("SecureRandom.SHA1PRNG ImplementedIn", "Software");
+        }
+    }
 }
